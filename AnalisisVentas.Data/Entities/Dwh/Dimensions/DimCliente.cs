@@ -9,7 +9,7 @@ public class DimCliente
 {
     [Key]
     public int ClienteKey { get; set; }
-    public int ClienteIdOrigen { get; set; }
+    public string ClienteIdOrigen { get; set; } = string.Empty;
     public string NombreCompleto { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Telefono { get; set; } = string.Empty;

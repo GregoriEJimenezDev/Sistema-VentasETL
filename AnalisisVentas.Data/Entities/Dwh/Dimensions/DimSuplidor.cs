@@ -9,7 +9,7 @@ public class DimSuplidor
 {
     [Key]
     public int SuplidorKey { get; set; }
-    public int SuplidorIdOrigen { get; set; }
+    public string SuplidorIdOrigen { get; set; } = string.Empty;
     public string NombreSuplidor { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Telefono { get; set; } = string.Empty;
