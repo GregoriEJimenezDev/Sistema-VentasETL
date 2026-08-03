@@ -1,6 +1,6 @@
 namespace AnalisisVentas.Data.Entities.Db;
 
-// Principio S (Single Responsibility): POCO puro, solo representa la entidad Customers.
+
 public class Customer
 {
     public int CustomerID { get; set; }

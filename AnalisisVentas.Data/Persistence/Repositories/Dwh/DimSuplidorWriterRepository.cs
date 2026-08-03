@@ -6,8 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnalisisVentas.Data.Persistence.Repositories.Dwh;
 
-// Principio S: esta clase solo hace UPSERT sobre Dimensiones.DimSuplidor.
-// Principio D: depende de abstracciones (IConfiguration, ILogger).
+
 // Estrategia SCD Tipo 1: si el SuplidorIdOrigen existe se actualiza, si no se inserta.
 public class DimSuplidorWriterRepository : IDbWriterRepository<DimSuplidor>
 {

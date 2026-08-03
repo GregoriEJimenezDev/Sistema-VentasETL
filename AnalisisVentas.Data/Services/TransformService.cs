@@ -5,8 +5,7 @@ using AnalisisVentas.Data.Entities.Dwh.Facts;
 
 namespace AnalisisVentas.Data.Services;
 
-// Principio S: esta clase estática solo se encarga de transformar/mapear entidades
-// de origen (BD, CSV, API) hacia las entidades del DWH. Sin estado y sin I/O.
+
 public static class TransformService
 {
     // Mapea Product + Category → DimProducto.

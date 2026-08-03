@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AnalisisVentas.Data.Entities.Dwh.Facts;
 
-// Principio S (Single Responsibility): POCO puro, solo representa la tabla FactVentas.
+
 [Table("FactVentas", Schema = "Hechos")]
 public class FactVentas
 {

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AnalisisVentas.Data.Entities.Dwh.Dimensions;
 
-// Principio S (Single Responsibility): POCO puro, solo representa la tabla DimSuplidor.
+
 [Table("DimSuplidor", Schema = "Dimensiones")]
 public class DimSuplidor
 {

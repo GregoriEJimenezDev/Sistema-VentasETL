@@ -6,9 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnalisisVentas.Data.Persistence.Repositories.Dwh;
 
-// Principio S: esta clase solo inserta filas en Hechos.FactVentas sin duplicar.
-// Principio D: depende de abstracciones (IConfiguration, ILogger).
-// Si el hecho ya existe (misma combinación de keys) se retorna el key sin insertar.
+
 public class FactVentasWriterRepository : IDbWriterRepository<FactVentas>
 {
     private readonly IConfiguration _configuration;

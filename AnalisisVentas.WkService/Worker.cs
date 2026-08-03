@@ -3,8 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnalisisVentas.WkService;
 
-// Principio S: el Worker solo arranca el pipeline ETL; toda la orquestación (extracción
-// paralela, staging y carga) se delega a EtlOrchestratorService.
+
 public class Worker : BackgroundService
 {
     private readonly EtlOrchestratorService _etlOrchestrator;

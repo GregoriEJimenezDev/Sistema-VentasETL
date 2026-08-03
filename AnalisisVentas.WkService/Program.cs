@@ -15,7 +15,7 @@ using AnalisisVentas.WkService;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// Principio D: Composition Root, se registran las implementaciones contra sus interfaces.
+
 // Se usa AddTransient porque el Worker (BackgroundService singleton) no puede consumir
 // servicios scoped; AddScoped rompería el runtime. AddSingleton para LoggerService (stateless).
 

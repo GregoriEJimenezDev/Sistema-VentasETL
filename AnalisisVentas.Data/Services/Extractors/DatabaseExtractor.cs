@@ -2,8 +2,7 @@ using AnalisisVentas.Data.Interfaces;
 
 namespace AnalisisVentas.Data.Services.Extractors;
 
-// Principio S: este extractor solo extrae datos de la base de datos relacional.
-// Principio D: depende de la abstracción IDbReaderRepository<T> y de ILoggerService.
+
 public class DatabaseExtractor<TClass> : IExtractor<TClass> where TClass : class
 {
     private readonly IDbReaderRepository<TClass> _reader;

@@ -4,9 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnalisisVentas.Data.Services;
 
-// Principio S: servicio dedicado de logging (monitoreo y trazabilidad del ETL).
-// Principio D: se abstrae detrás de ILoggerService para que los servicios del ETL
-// no dependan directamente de Microsoft.Extensions.Logging.
+
 public class LoggerService : ILoggerService
 {
     private readonly ILogger _logger;

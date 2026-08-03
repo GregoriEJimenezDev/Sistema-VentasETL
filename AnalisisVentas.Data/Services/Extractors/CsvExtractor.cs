@@ -3,8 +3,7 @@ using AnalisisVentas.Data.Interfaces;
 
 namespace AnalisisVentas.Data.Services.Extractors;
 
-// Principio S: este extractor solo extrae datos de archivos CSV.
-// Principio D: depende de la abstracción IFileReaderRepository<T> y de ILoggerService.
+
 public class CsvExtractor<TClass> : IExtractor<TClass> where TClass : class
 {
     private readonly IFileReaderRepository<TClass> _reader;

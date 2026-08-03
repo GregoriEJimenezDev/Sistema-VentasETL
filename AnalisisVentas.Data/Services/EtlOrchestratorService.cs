@@ -9,11 +9,7 @@ using AnalisisVentas.Data.Interfaces;
 
 namespace AnalisisVentas.Data.Services;
 
-// Principio S: esta clase es el orquestador del pipeline ETL (extracción paralela,
-// staging y carga), delegando cada fase a los servicios especializados. Así el Worker
-// queda limpio y cada clase tiene una sola responsabilidad.
-// Principio D: depende únicamente de abstracciones (IExtractor<T>, IStagingService,
-// IDbWriterRepository<T>, ILoggerService).
+
 public class EtlOrchestratorService
 {
     private const int MaxGradoDeParalelismo = 4;

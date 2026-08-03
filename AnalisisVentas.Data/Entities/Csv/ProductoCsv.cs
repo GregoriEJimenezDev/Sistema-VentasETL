@@ -2,7 +2,7 @@ using CsvHelper.Configuration.Attributes;
 
 namespace AnalisisVentas.Data.Entities.Csv;
 
-// Principio S (Single Responsibility): POCO puro, solo representa la estructura del CSV de productos.
+
 public class ProductoCsv
 {
     [Name("ProductoId")]

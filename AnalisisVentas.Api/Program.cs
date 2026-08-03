@@ -4,7 +4,7 @@ using AnalisisVentas.Data.Persistence.Repositories.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Principio D: Composition Root, se registran las implementaciones contra sus interfaces.
+
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IApiReaderRepository<Supplier>, ApiSuplidorReaderRepository>();

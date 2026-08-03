@@ -6,8 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnalisisVentas.Data.Persistence.Repositories.Db;
 
-// Principio S: esta clase solo lee la tabla dbo.Products.
-// Principio D: depende de abstracciones (IConfiguration, ILogger).
+
 public class DbProductReaderRepository : IDbReaderRepository<Product>
 {
     private readonly IConfiguration _configuration;

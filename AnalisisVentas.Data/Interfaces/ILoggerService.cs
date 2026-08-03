@@ -1,7 +1,6 @@
 namespace AnalisisVentas.Data.Interfaces;
 
-// Principio D: abstracción de logging para que los servicios del ETL no dependan
-// directamente de Microsoft.Extensions.Logging. Facilita el monitoreo y la trazabilidad.
+
 public interface ILoggerService
 {
     void LogInformation(string message, params object?[] args);

@@ -5,8 +5,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace AnalisisVentas.Api.Controllers;
 
-// Principio S: el controlador solo expone suplidores obtenidos de la API.
-// Principio D: depende de la abstracción IApiReaderRepository<Supplier>, no de la concreción.
+
 [ApiController]
 [Route("api/[controller]")]
 public class SuplidoresController : ControllerBase

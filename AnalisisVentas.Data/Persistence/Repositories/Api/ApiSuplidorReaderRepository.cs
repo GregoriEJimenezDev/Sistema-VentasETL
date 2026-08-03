@@ -6,10 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnalisisVentas.Data.Persistence.Repositories.Api;
 
-// Principio S: esta clase solo lee datos desde una API externa.
-// Principio O: abierta para extensión, cerrada para modificación.
-// Principio L: sustituible por IApiReaderRepository<Supplier>.
-// Principio D: depende de abstracciones (IHttpClientFactory, IConfiguration, ILogger).
+
 public class ApiSuplidorReaderRepository : IApiReaderRepository<Supplier>
 {
     private readonly IHttpClientFactory _httpClientFactory;

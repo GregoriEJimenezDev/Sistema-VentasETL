@@ -2,8 +2,7 @@ using AnalisisVentas.Data.Interfaces;
 
 namespace AnalisisVentas.Data.Services.Extractors;
 
-// Principio S: este extractor solo consume una API REST mediante HttpClient.
-// Principio D: depende de la abstracción IApiReaderRepository<T> y de ILoggerService.
+
 public class ApiExtractor<TClass> : IExtractor<TClass> where TClass : class
 {
     private readonly IApiReaderRepository<TClass> _reader;
