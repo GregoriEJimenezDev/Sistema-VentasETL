@@ -6,10 +6,6 @@ using Microsoft.Extensions.Logging;
 
 namespace AnalisisVentas.Data.Persistence.Repositories.Db;
 
-// Principio S: esta clase solo lee datos de la base de datos transaccional.
-// Principio O: abierta para extensión, cerrada para modificación.
-// Principio L: sustituible por IDbReaderRepository<OrderDetail>.
-// Principio D: depende de abstracciones (IConfiguration, ILogger).
 public class DbVentasReaderRepository : IDbReaderRepository<OrderDetail>
 {
     private readonly IConfiguration _configuration;

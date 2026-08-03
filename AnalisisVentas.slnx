@@ -8,7 +8,4 @@
   <Folder Name="/Proccess/">
     <Project Path="AnalisisVentas.WkService/AnalisisVentas.WkService.csproj" />
   </Folder>
-  <Folder Name="/Consola/">
-    <Project Path="VentasETL/VentasETL.csproj" />
-  </Folder>
 </Solution>
