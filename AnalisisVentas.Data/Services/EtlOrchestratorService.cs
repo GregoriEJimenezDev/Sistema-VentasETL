@@ -89,7 +89,7 @@ public class EtlOrchestratorService
             productos.Count(), categorias.Count(), clientes.Count(), ciudades.Count(), ordenes.Count(),
             detalles.Count(), suplidores.Count(), productosCsv.Count(), clientesCsv.Count());
 
-        // Se persisten los datos extraídos en archivos temporales (staging) como entregable de la fase de extracción.
+        // Se persisten los datos extraídos en archivos temporales (staging)  que viene siendo la fase de extracción.
         var stopwatchStaging = Stopwatch.StartNew();
 
         await _staging.WriteAsync("productos-bd", productos, cancellationToken);
