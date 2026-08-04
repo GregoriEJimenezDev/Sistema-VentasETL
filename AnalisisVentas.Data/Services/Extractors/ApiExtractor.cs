@@ -20,9 +20,9 @@ public class ApiExtractor<TClass> : IExtractor<TClass> where TClass : class
     {
         _logger.LogInformation("ApiExtractor: iniciando extracción desde {Url}", _url);
 
-        var registros = await _reader.ReadFromApiAsync(_url);
+        var records = await _reader.ReadFromApiAsync(_url);
 
-        _logger.LogInformation("ApiExtractor: extraídos {Cantidad} registros desde {Url}", registros.Count(), _url);
-        return registros;
+        _logger.LogInformation("ApiExtractor: extraídos {Cantidad} registros desde {Url}", records.Count(), _url);
+        return records;
     }
 }

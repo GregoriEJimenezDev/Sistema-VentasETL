@@ -20,9 +20,9 @@ public class DatabaseExtractor<TClass> : IExtractor<TClass> where TClass : class
     {
         _logger.LogInformation("DatabaseExtractor: iniciando extracción de {Source}", _source);
 
-        var registros = await _reader.ReadFromDbAsync();
+        var records = await _reader.ReadFromDbAsync();
 
-        _logger.LogInformation("DatabaseExtractor: extraídos {Cantidad} registros de {Source}", registros.Count(), _source);
-        return registros;
+        _logger.LogInformation("DatabaseExtractor: extraídos {Cantidad} registros de {Source}", records.Count(), _source);
+        return records;
     }
 }

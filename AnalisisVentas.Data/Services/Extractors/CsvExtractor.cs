@@ -22,9 +22,9 @@ public class CsvExtractor<TClass> : IExtractor<TClass> where TClass : class
         _logger.LogInformation("CsvExtractor: iniciando extracción desde {FilePath}", _filePath);
 
         var factory = new FileFactory<TClass>(_filePath);
-        var registros = await factory.ReadData(_reader);
+        var records = await factory.ReadData(_reader);
 
-        _logger.LogInformation("CsvExtractor: extraídos {Cantidad} registros desde {FilePath}", registros.Count(), _filePath);
-        return registros;
+        _logger.LogInformation("CsvExtractor: extraídos {Cantidad} registros desde {FilePath}", records.Count(), _filePath);
+        return records;
     }
 }

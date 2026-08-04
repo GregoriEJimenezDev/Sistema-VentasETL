@@ -18,14 +18,14 @@ public class StagingService : IStagingService
         _logger = logger;
     }
 
-    public async Task WriteAsync<T>(string nombre, IEnumerable<T> registros, CancellationToken cancellationToken = default)
+    public async Task WriteAsync<T>(string name, IEnumerable<T> records, CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(_directory);
-        var filePath = Path.Combine(_directory, $"{nombre}.json");
+        var filePath = Path.Combine(_directory, $"{name}.json");
 
-        var json = JsonSerializer.Serialize(registros, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(records, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(filePath, json, cancellationToken);
 
-        _logger.LogInformation("Staging: {Cantidad} registros de {Nombre} escritos en {Ruta}", registros.Count(), nombre, filePath);
+        _logger.LogInformation("Staging: {Cantidad} registros de {Nombre} escritos en {Ruta}", records.Count(), name, filePath);
     }
 }

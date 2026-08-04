@@ -4,5 +4,5 @@ namespace AnalisisVentas.Data.Interfaces;
 // cumpliendo el requisito de la fase de extracción del ETL.
 public interface IStagingService
 {
-    Task WriteAsync<T>(string nombre, IEnumerable<T> registros, CancellationToken cancellationToken = default);
+    Task WriteAsync<T>(string name, IEnumerable<T> records, CancellationToken cancellationToken = default);
 }
