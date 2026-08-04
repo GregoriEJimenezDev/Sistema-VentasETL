@@ -53,8 +53,6 @@ public class EtlOrchestratorService
         var stopwatchTotal = Stopwatch.StartNew();
         _logger.LogInformation("=== INICIO DEL PROCESO ETL — {Timestamp} ===", DateTime.Now);
 
-        // Las fuentes de BD son críticas (abortan el proceso si fallan); las API/CSV son
-        // tolerantes a fallos y continúan con datos vacíos. Task.WhenAll dispara todas en paralelo.
         var stopwatchExtraccion = Stopwatch.StartNew();
 
         var tProductos = GuardAsync(_dbProductoExtractor.ExtractAsync(cancellationToken), "Products (BD)");
@@ -91,7 +89,7 @@ public class EtlOrchestratorService
             productos.Count(), categorias.Count(), clientes.Count(), ciudades.Count(), ordenes.Count(),
             detalles.Count(), suplidores.Count(), productosCsv.Count(), clientesCsv.Count());
 
-        // Se persisten los datos extraídos en archivos temporales (staging) como entregable de la fase de extracción.
+        // Se persisten los datos extraídos en archivos temporales (staging)  que viene siendo la fase de extracción.
         var stopwatchStaging = Stopwatch.StartNew();
 
         await _staging.WriteAsync("productos-bd", productos, cancellationToken);
