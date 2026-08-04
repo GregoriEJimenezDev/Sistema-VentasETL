@@ -1,13 +1,10 @@
 using AnalisisVentas.Data.Entities.Api;
 using AnalisisVentas.Data.Entities.Csv;
 using AnalisisVentas.Data.Entities.Db;
-using AnalisisVentas.Data.Entities.Dwh.Dimensions;
-using AnalisisVentas.Data.Entities.Dwh.Facts;
 using AnalisisVentas.Data.Interfaces;
 using AnalisisVentas.Data.Persistence.Repositories.Api;
 using AnalisisVentas.Data.Persistence.Repositories.Csv;
 using AnalisisVentas.Data.Persistence.Repositories.Db;
-using AnalisisVentas.Data.Persistence.Repositories.Dwh;
 using AnalisisVentas.Data.Persistence.Staging;
 using AnalisisVentas.Data.Services;
 using AnalisisVentas.Data.Services.Extractors;
@@ -62,12 +59,6 @@ builder.Services.AddTransient<IExtractor<Customer>, DatabaseExtractor<Customer>>
 builder.Services.AddTransient<IExtractor<City>, DatabaseExtractor<City>>();
 builder.Services.AddTransient<IExtractor<Order>, DatabaseExtractor<Order>>();
 builder.Services.AddTransient<IExtractor<OrderDetail>, DatabaseExtractor<OrderDetail>>();
-
-// Escritores DWH
-builder.Services.AddTransient<IDbWriterRepository<DimProducto>, DimProductoWriterRepository>();
-builder.Services.AddTransient<IDbWriterRepository<DimCliente>, DimClienteWriterRepository>();
-builder.Services.AddTransient<IDbWriterRepository<DimSuplidor>, DimSuplidorWriterRepository>();
-builder.Services.AddTransient<IDbWriterRepository<FactVentas>, FactVentasWriterRepository>();
 
 // Orquestador del pipeline ETL + Worker
 builder.Services.AddTransient<EtlOrchestratorService>();
