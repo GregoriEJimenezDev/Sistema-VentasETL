@@ -53,8 +53,6 @@ public class EtlOrchestratorService
         var stopwatchTotal = Stopwatch.StartNew();
         _logger.LogInformation("=== INICIO DEL PROCESO ETL — {Timestamp} ===", DateTime.Now);
 
-        // Las fuentes de BD son críticas (abortan el proceso si fallan); las API/CSV son
-        // tolerantes a fallos y continúan con datos vacíos. Task.WhenAll dispara todas en paralelo.
         var stopwatchExtraccion = Stopwatch.StartNew();
 
         var tProductos = GuardAsync(_dbProductoExtractor.ExtractAsync(cancellationToken), "Products (BD)");
