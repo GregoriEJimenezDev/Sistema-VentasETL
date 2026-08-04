@@ -1,7 +1,5 @@
 using AnalisisVentas.Data.Entities.Api;
-using AnalisisVentas.Data.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 
 namespace AnalisisVentas.Api.Controllers;
 
@@ -10,36 +8,58 @@ namespace AnalisisVentas.Api.Controllers;
 [Route("api/[controller]")]
 public class SuplidoresController : ControllerBase
 {
-    private readonly IApiReaderRepository<Supplier> _suplidorRepo;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger<SuplidoresController> _logger;
-
-    public SuplidoresController(
-        IApiReaderRepository<Supplier> suplidorRepo,
-        IConfiguration configuration,
-        ILogger<SuplidoresController> logger)
+    private static readonly List<Supplier> _suplidores = new()
     {
-        _suplidorRepo = suplidorRepo;
-        _configuration = configuration;
-        _logger = logger;
-    }
+        new Supplier
+        {
+            Id = 1,
+            Email = "juan.perez@proveedor.com",
+            Username = "juanperez",
+            Phone = "+51-987-654-321",
+            Name = new SupplierName { Firstname = "Juan", Lastname = "Perez" },
+            Address = new SupplierAddress { City = "Lima", Street = "Av. Industrial 123", Zipcode = "15001" }
+        },
+        new Supplier
+        {
+            Id = 2,
+            Email = "maria.garcia@distribuidora.com",
+            Username = "mariagarcia",
+            Phone = "+51-956-789-012",
+            Name = new SupplierName { Firstname = "Maria", Lastname = "Garcia" },
+            Address = new SupplierAddress { City = "Arequipa", Street = "Calle Comercio 456", Zipcode = "04001" }
+        },
+        new Supplier
+        {
+            Id = 3,
+            Email = "carlos.lopez@suministros.com",
+            Username = "carloslopez",
+            Phone = "+51-945-123-789",
+            Name = new SupplierName { Firstname = "Carlos", Lastname = "Lopez" },
+            Address = new SupplierAddress { City = "Trujillo", Street = "Jr. Manufactura 789", Zipcode = "13001" }
+        },
+        new Supplier
+        {
+            Id = 4,
+            Email = "ana.martinez@logistica.com",
+            Username = "anamartinez",
+            Phone = "+51-934-567-890",
+            Name = new SupplierName { Firstname = "Ana", Lastname = "Martinez" },
+            Address = new SupplierAddress { City = "Chiclayo", Street = "Av. Almacenes 321", Zipcode = "14001" }
+        },
+        new Supplier
+        {
+            Id = 5,
+            Email = "pedro.sanchez@importaciones.com",
+            Username = "pedrosanchez",
+            Phone = "+51-923-456-789",
+            Name = new SupplierName { Firstname = "Pedro", Lastname = "Sanchez" },
+            Address = new SupplierAddress { City = "Piura", Street = "Calle Puerto 654", Zipcode = "20001" }
+        }
+    };
 
     [HttpGet]
-    public async Task<IActionResult> Get()
+    public IActionResult Get()
     {
-        try
-        {
-            _logger.LogInformation("Solicitando suplidores desde el controlador");
-
-            var url = _configuration["ApiSettings:SuppliersUrl"]!;
-            var suplidores = await _suplidorRepo.ReadFromApiAsync(url);
-
-            return Ok(suplidores);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al obtener suplidores en el controlador");
-            return Problem("Ocurrió un error al obtener los suplidores.");
-        }
+        return Ok(_suplidores);
     }
 }
