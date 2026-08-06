@@ -24,16 +24,26 @@ public class VentasHandlerService
 
     public async Task ExecuteAsync(string csvFilePath, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Iniciando proceso ETL desde CSV: {FilePath}", csvFilePath);
+        _logger.LogInformation("=== INICIANDO PROCESO ETL ===");
+        _logger.LogInformation("Archivo origen: {FilePath}", csvFilePath);
 
         // 1. Leer CSV
+        _logger.LogInformation("Paso 1: Leyendo archivo CSV...");
         var rows = await _csvReader.ReadAsync(csvFilePath, cancellationToken);
         var rowsList = rows.ToList();
-        _logger.LogInformation("Leídos {Count} registros del CSV", rowsList.Count);
+        _logger.LogInformation("Paso 1 completado. Registros leídos: {Count}", rowsList.Count);
+
+        if (rowsList.Count == 0)
+        {
+            _logger.LogWarning("No hay datos para procesar. Finalizando.");
+            return;
+        }
 
         // 2. Transformar y deduplicar dimensiones con LINQ
+        _logger.LogInformation("Paso 2: Transformando y deduplicando dimensiones...");
+
         var categorias = rowsList
-            .Select(r => r.CategoriaNombre)
+            .Select(r => r.Categoria)
             .Distinct()
             .Select(n => new DimCategoria
             {
@@ -41,52 +51,57 @@ public class VentasHandlerService
                 FechaCreacionDW = DateTime.UtcNow
             })
             .ToList();
+        _logger.LogInformation("  - Categorías únicas: {Count}", categorias.Count);
 
         var productos = rowsList
-            .GroupBy(r => r.ProductoCodigo)
+            .GroupBy(r => r.Producto)
             .Select(g => g.First())
             .Select(r => new DimProducto
             {
-                Codigo = r.ProductoCodigo,
-                NombreProducto = r.ProductoNombre,
-                Categoria = r.CategoriaNombre,
-                Precio = r.Precio,
-                Stock = r.Stock,
+                Codigo = r.Producto, // Usamos el nombre como código ya que no hay código separado
+                NombreProducto = r.Producto,
+                Categoria = r.Categoria,
+                Precio = r.PrecioBase,
+                Stock = 0, // No disponible en CSV
                 FechaCreacionDW = DateTime.UtcNow
             })
             .ToList();
+        _logger.LogInformation("  - Productos únicos: {Count}", productos.Count);
 
         var clientes = rowsList
-            .GroupBy(r => r.ClienteId)
+            .GroupBy(r => r.Cliente)
             .Select(g => g.First())
             .Select(r => new DimCliente
             {
-                ClienteIdOrigen = r.ClienteId,
-                NombreCompleto = r.ClienteNombre,
-                Email = r.ClienteEmail,
-                Telefono = r.ClienteTelefono,
-                Ciudad = r.ClienteCiudad,
+                ClienteIdOrigen = r.Cliente,
+                NombreCompleto = r.Cliente,
+                Email = string.Empty,
+                Telefono = string.Empty,
+                Ciudad = string.Empty,
                 FechaCreacionDW = DateTime.UtcNow
             })
             .ToList();
+        _logger.LogInformation("  - Clientes únicos: {Count}", clientes.Count);
 
         var suplidores = rowsList
-            .GroupBy(r => r.SuplidorId)
+            .GroupBy(r => r.Suplidor)
             .Select(g => g.First())
             .Select(r => new DimSuplidor
             {
-                SuplidorIdOrigen = r.SuplidorId,
-                NombreSuplidor = r.SuplidorNombre,
-                Email = r.SuplidorEmail,
-                Telefono = r.SuplidorTelefono,
-                Ciudad = r.SuplidorCiudad,
+                SuplidorIdOrigen = r.Suplidor,
+                NombreSuplidor = r.Suplidor,
+                Email = string.Empty,
+                Telefono = string.Empty,
+                Ciudad = string.Empty,
                 FechaCreacionDW = DateTime.UtcNow
             })
             .ToList();
+        _logger.LogInformation("  - Suplidores únicos: {Count}", suplidores.Count);
 
         // 3. Fechas únicas (yyyyMMdd)
+        _logger.LogInformation("Paso 3: Generando dimensión de tiempo...");
         var fechas = rowsList
-            .Select(r => r.FechaVenta.Date)
+            .Select(r => r.Fecha.Date)
             .Distinct()
             .Select(fecha => new DimFecha
             {
@@ -103,27 +118,35 @@ public class VentasHandlerService
                 FechaCreacionDW = DateTime.UtcNow
             })
             .ToList();
+        _logger.LogInformation("  - Fechas únicas: {Count}", fechas.Count);
 
         // 4. Cargar dimensiones primero
+        _logger.LogInformation("Paso 4: Cargando dimensiones en DWH...");
         await _dwhRepository.LoadDataAsync(
             categorias, productos, clientes, suplidores, fechas, Enumerable.Empty<FactVentas>(),
             cancellationToken);
+        _logger.LogInformation("Paso 4 completado. Dimensiones guardadas.");
 
         // 5. Resolver FKs y crear hechos
+        _logger.LogInformation("Paso 5: Resolviendo claves foráneas y construyendo hechos...");
         var productoKeys = await _dwhRepository.GetProductoKeysAsync(productos.Select(p => p.Codigo), cancellationToken);
         var clienteKeys = await _dwhRepository.GetClienteKeysAsync(clientes.Select(c => c.ClienteIdOrigen), cancellationToken);
+        var categoriaKeys = await _dwhRepository.GetCategoriaKeysAsync(categorias.Select(c => c.NombreCategoria), cancellationToken);
+        var suplidorKeys = await _dwhRepository.GetSuplidorKeysAsync(suplidores.Select(s => s.SuplidorIdOrigen), cancellationToken);
 
         var hechos = rowsList.Select(r => new FactVentas
         {
-            ProductoKey = productoKeys[r.ProductoCodigo],
-            ClienteKey = clienteKeys[r.ClienteId],
-            FechaKey = int.Parse(r.FechaVenta.ToString("yyyyMMdd")),
+            ProductoKey = productoKeys[r.Producto],
+            ClienteKey = clienteKeys[r.Cliente],
+            FechaKey = int.Parse(r.Fecha.ToString("yyyyMMdd")),
             Cantidad = r.Cantidad,
-            PrecioUnitario = r.PrecioUnitario,
-            TotalVenta = r.TotalVenta
+            PrecioUnitario = r.PrecioBase,
+            TotalVenta = r.Total
         }).ToList();
+        _logger.LogInformation("  - Hechos construidos: {Count}", hechos.Count);
 
         // 6. Guardar hechos
+        _logger.LogInformation("Paso 6: Guardando hechos en DWH...");
         await _dwhRepository.LoadDataAsync(
             Enumerable.Empty<DimCategoria>(),
             Enumerable.Empty<DimProducto>(),
@@ -133,6 +156,8 @@ public class VentasHandlerService
             hechos,
             cancellationToken);
 
-        _logger.LogInformation("Proceso ETL completado. Hechos insertados: {Count}", hechos.Count);
+        _logger.LogInformation("=== PROCESO ETL COMPLETADO EXITOSAMENTE ===");
+        _logger.LogInformation("Resumen: {Categorias} categorías, {Productos} productos, {Clientes} clientes, {Suplidores} suplidores, {Fechas} fechas, {Hechos} hechos",
+            categorias.Count, productos.Count, clientes.Count, suplidores.Count, fechas.Count, hechos.Count);
     }
 }

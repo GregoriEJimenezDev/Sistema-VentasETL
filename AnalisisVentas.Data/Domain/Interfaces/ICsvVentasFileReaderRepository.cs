@@ -1,5 +1,4 @@
-using AnalisisVentas.Data.Domain.Entities.Dimensions;
-using AnalisisVentas.Data.Domain.Entities.Facts;
+using System.Globalization;
 
 namespace AnalisisVentas.Data.Domain.Interfaces;
 
@@ -9,23 +8,12 @@ public interface ICsvVentasFileReaderRepository
 }
 
 public record VentaCsvRow(
-    string ProductoCodigo,
-    string ProductoNombre,
-    string CategoriaNombre,
-    decimal Precio,
-    int Stock,
-    string ClienteId,
-    string ClienteNombre,
-    string ClienteEmail,
-    string ClienteTelefono,
-    string ClienteCiudad,
-    string SuplidorId,
-    string SuplidorNombre,
-    string SuplidorEmail,
-    string SuplidorTelefono,
-    string SuplidorCiudad,
-    DateTime FechaVenta,
+    DateTime Fecha,
+    string Categoria,
+    string Producto,
+    string Cliente,
+    string Suplidor,
     int Cantidad,
-    decimal PrecioUnitario,
-    decimal TotalVenta
+    decimal PrecioBase,
+    decimal Total
 );

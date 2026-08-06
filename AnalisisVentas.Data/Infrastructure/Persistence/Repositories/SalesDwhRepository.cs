@@ -139,4 +139,18 @@ public class SalesDwhRepository : ISalesDwhRepository
             .Where(c => idsOrigen.Contains(c.ClienteIdOrigen))
             .ToDictionaryAsync(c => c.ClienteIdOrigen, c => c.ClienteKey, cancellationToken);
     }
+
+    public async Task<Dictionary<string, int>> GetCategoriaKeysAsync(IEnumerable<string> nombres, CancellationToken cancellationToken = default)
+    {
+        return await _context.DimCategorias
+            .Where(c => nombres.Contains(c.NombreCategoria))
+            .ToDictionaryAsync(c => c.NombreCategoria, c => c.CategoriaKey, cancellationToken);
+    }
+
+    public async Task<Dictionary<string, int>> GetSuplidorKeysAsync(IEnumerable<string> idsOrigen, CancellationToken cancellationToken = default)
+    {
+        return await _context.DimSuplidores
+            .Where(s => idsOrigen.Contains(s.SuplidorIdOrigen))
+            .ToDictionaryAsync(s => s.SuplidorIdOrigen, s => s.SuplidorKey, cancellationToken);
+    }
 }

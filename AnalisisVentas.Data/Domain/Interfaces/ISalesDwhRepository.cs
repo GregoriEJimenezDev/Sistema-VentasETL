@@ -16,4 +16,6 @@ public interface ISalesDwhRepository
 
     Task<Dictionary<string, int>> GetProductoKeysAsync(IEnumerable<string> codigos, CancellationToken cancellationToken = default);
     Task<Dictionary<string, int>> GetClienteKeysAsync(IEnumerable<string> idsOrigen, CancellationToken cancellationToken = default);
+    Task<Dictionary<string, int>> GetCategoriaKeysAsync(IEnumerable<string> nombres, CancellationToken cancellationToken = default);
+    Task<Dictionary<string, int>> GetSuplidorKeysAsync(IEnumerable<string> idsOrigen, CancellationToken cancellationToken = default);
 }
