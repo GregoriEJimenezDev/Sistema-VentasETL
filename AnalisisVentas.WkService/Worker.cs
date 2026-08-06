@@ -44,8 +44,18 @@ public class Worker : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fatal en el proceso ETL");
+            _logger.LogCritical(ex, "Error fatal que causó el cierre del Worker");
             throw;
+        }
+
+        try
+        {
+            _logger.LogInformation("ETL completado. Manteniendo el Worker vivo para revisión de logs. Presiona Ctrl+C para detener.");
+            await Task.Delay(Timeout.Infinite, stoppingToken);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Worker detenido por el usuario.");
         }
     }
 }

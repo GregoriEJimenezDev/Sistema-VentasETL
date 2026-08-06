@@ -44,6 +44,7 @@ public class SalesDwhRepository : ISalesDwhRepository
         {
             if (existingCategorias.TryGetValue(cat.NombreCategoria, out var existing))
             {
+                cat.CategoriaKey = existing.CategoriaKey;
                 _context.Entry(existing).CurrentValues.SetValues(cat);
             }
             else
@@ -61,6 +62,7 @@ public class SalesDwhRepository : ISalesDwhRepository
         {
             if (existingProductos.TryGetValue(prod.Codigo, out var existing))
             {
+                prod.ProductoKey = existing.ProductoKey;
                 _context.Entry(existing).CurrentValues.SetValues(prod);
             }
             else
@@ -78,6 +80,7 @@ public class SalesDwhRepository : ISalesDwhRepository
         {
             if (existingClientes.TryGetValue(cli.ClienteIdOrigen, out var existing))
             {
+                cli.ClienteKey = existing.ClienteKey;
                 _context.Entry(existing).CurrentValues.SetValues(cli);
             }
             else
@@ -95,6 +98,7 @@ public class SalesDwhRepository : ISalesDwhRepository
         {
             if (existingSuplidores.TryGetValue(supl.SuplidorIdOrigen, out var existing))
             {
+                supl.SuplidorKey = existing.SuplidorKey;
                 _context.Entry(existing).CurrentValues.SetValues(supl);
             }
             else
