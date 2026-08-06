@@ -29,6 +29,10 @@ public class SalesDwhRepository : ISalesDwhRepository
     {
         _logger.LogInformation("Iniciando carga de datos en DWH");
 
+        // Crear tablas si no existen
+        await _context.Database.EnsureCreatedAsync(cancellationToken);
+        _logger.LogInformation("Base de datos verificada/creada");
+
         // 1. Categorías - UPSERT
         _logger.LogInformation("Procesando DimCategoria: {Count} registros", categorias.Count());
         var existingCategorias = await _context.DimCategorias
