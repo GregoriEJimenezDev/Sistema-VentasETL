@@ -85,4 +85,65 @@ public class DimClienteWriterRepository : IDbWriterRepository<DimCliente>
             throw;
         }
     }
+
+    public async Task<(int Inserted, int Updated)> UpsertBatchAsync(IEnumerable<DimCliente> entities)
+    {
+        int inserted = 0, updated = 0;
+        foreach (var entity in entities)
+        {
+            var connectionString = _configuration.GetConnectionString("SistemaVentasETL");
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            const string selectQuery = "SELECT ClienteKey FROM Dimensiones.DimCliente WHERE ClienteIdOrigen = @ClienteIdOrigen";
+            var clienteKey = 0;
+
+            await using (var selectCommand = new SqlCommand(selectQuery, connection))
+            {
+                selectCommand.Parameters.AddWithValue("@ClienteIdOrigen", entity.ClienteIdOrigen);
+                var result = await selectCommand.ExecuteScalarAsync();
+                if (result != null && result != DBNull.Value)
+                {
+                    clienteKey = Convert.ToInt32(result);
+
+                    const string updateQuery = @"
+                        UPDATE Dimensiones.DimCliente
+                        SET NombreCompleto = @NombreCompleto,
+                            Email = @Email,
+                            Telefono = @Telefono,
+                            Ciudad = @Ciudad
+                        WHERE ClienteKey = @ClienteKey";
+
+                    await using var updateCommand = new SqlCommand(updateQuery, connection);
+                    updateCommand.Parameters.AddWithValue("@NombreCompleto", entity.NombreCompleto);
+                    updateCommand.Parameters.AddWithValue("@Email", entity.Email);
+                    updateCommand.Parameters.AddWithValue("@Telefono", entity.Telefono);
+                    updateCommand.Parameters.AddWithValue("@Ciudad", entity.Ciudad);
+                    updateCommand.Parameters.AddWithValue("@ClienteKey", clienteKey);
+                    await updateCommand.ExecuteNonQueryAsync();
+
+                    updated++;
+                    continue;
+                }
+            }
+
+            const string insertQuery = @"
+                INSERT INTO Dimensiones.DimCliente (ClienteIdOrigen, NombreCompleto, Email, Telefono, Ciudad)
+                VALUES (@ClienteIdOrigen, @NombreCompleto, @Email, @Telefono, @Ciudad);
+                SELECT SCOPE_IDENTITY();";
+
+            await using var insertCommand = new SqlCommand(insertQuery, connection);
+            insertCommand.Parameters.AddWithValue("@ClienteIdOrigen", entity.ClienteIdOrigen);
+            insertCommand.Parameters.AddWithValue("@NombreCompleto", entity.NombreCompleto);
+            insertCommand.Parameters.AddWithValue("@Email", entity.Email);
+            insertCommand.Parameters.AddWithValue("@Telefono", entity.Telefono);
+            insertCommand.Parameters.AddWithValue("@Ciudad", entity.Ciudad);
+
+            await insertCommand.ExecuteScalarAsync();
+            inserted++;
+        }
+
+        _logger.LogInformation("DimCliente carga completada — Insertados: {Inserted}, Actualizados: {Updated}", inserted, updated);
+        return (inserted, updated);
+    }
 }
