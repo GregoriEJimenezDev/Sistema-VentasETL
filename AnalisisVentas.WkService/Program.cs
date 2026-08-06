@@ -11,8 +11,8 @@ using AnalisisVentas.WkService;
 var builder = Host.CreateApplicationBuilder(args);
 
 // 1. Configuración de conexión desde appsettings.json
-var connectionString = builder.Configuration.GetConnectionString("SistemaVentasETL")
-    ?? throw new InvalidOperationException("Connection string 'SistemaVentasETL' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 // 2. EF Core con DbContextPool (obligatorio)
 builder.Services.AddDbContextPool<VentasDwhContext>(options =>
