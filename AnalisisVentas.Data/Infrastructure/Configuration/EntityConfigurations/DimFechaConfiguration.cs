@@ -10,6 +10,7 @@ public class DimFechaConfiguration : IEntityTypeConfiguration<DimFecha>
     {
         builder.ToTable("DimFecha", "Dimensiones");
         builder.HasKey(f => f.FechaKey);
+        builder.Property(f => f.FechaKey).ValueGeneratedNever();
         builder.Property(f => f.Fecha).HasColumnType("date").IsRequired();
         builder.Property(f => f.NombreMes).HasMaxLength(20).IsRequired();
         builder.Property(f => f.DiaNombre).HasMaxLength(20).IsRequired();

@@ -30,7 +30,7 @@ builder.Services.AddDbContextPool<VentasDwhContext>(options =>
 // 3. Inyección de dependencias
 builder.Services.AddTransient<ICsvVentasFileReaderRepository, CsvVentasFileReaderRepository>();
 builder.Services.AddTransient<ISalesDwhRepository, SalesDwhRepository>();
-builder.Services.AddTransient<VentasHandlerService>();
+builder.Services.AddScoped<VentasHandlerService>();
 
 // 4. Worker Service
 builder.Services.AddHostedService<Worker>();

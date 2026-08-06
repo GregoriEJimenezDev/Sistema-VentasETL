@@ -29,8 +29,10 @@ public class SalesDwhRepository : ISalesDwhRepository
     {
         _logger.LogInformation("Iniciando carga de datos en DWH");
 
-        // Crear tablas si no existen
-        await _context.Database.EnsureCreatedAsync(cancellationToken);
+        // Crear tablas si no existen.
+        // EnsureCreatedAsync solo crea tablas si la base de datos NO existe.
+        // Si la BD ya existe pero está vacía (sin tablas), hay que borrarla y recrearla una vez.
+        await EnsureDatabaseSchemaAsync(cancellationToken);
         _logger.LogInformation("Base de datos verificada/creada");
 
         // 1. Categorías - UPSERT
@@ -135,6 +137,36 @@ public class SalesDwhRepository : ISalesDwhRepository
         return await _context.DimProductos
             .Where(p => codigos.Contains(p.Codigo))
             .ToDictionaryAsync(p => p.Codigo, p => p.ProductoKey, cancellationToken);
+    }
+
+    private async Task EnsureDatabaseSchemaAsync(CancellationToken cancellationToken)
+    {
+        // EnsureCreated solo crea tablas si la base de datos NO existe.
+        // Si la BD ya existe pero está vacía, EnsureCreated no hace nada y las
+        // consultas fallan con 'Invalid object name'. Detectamos la ausencia de
+        // las tablas y, solo en ese caso, borramos y recreamos el esquema.
+
+        // Si la BD no existe, EnsureCreated la crea completa (BD + tablas).
+        if (!await _context.Database.CanConnectAsync(cancellationToken))
+        {
+            _logger.LogInformation("Base de datos no encontrada. Creando con esquema completo...");
+            await _context.Database.EnsureCreatedAsync(cancellationToken);
+            _logger.LogInformation("Base de datos y esquema creados correctamente.");
+            return;
+        }
+
+        // La BD existe: verificar si las tablas están presentes.
+        var tableExists = await _context.Database
+            .SqlQueryRaw<int>("SELECT CASE WHEN OBJECT_ID(N'Dimensiones.DimCategoria', N'U') IS NULL THEN 0 ELSE 1 END AS Value")
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (tableExists == 0)
+        {
+            _logger.LogWarning("Tablas del DWH no encontradas. Recreando esquema...");
+            await _context.Database.EnsureDeletedAsync(cancellationToken);
+            await _context.Database.EnsureCreatedAsync(cancellationToken);
+            _logger.LogInformation("Esquema del DWH creado correctamente.");
+        }
     }
 
     public async Task<Dictionary<string, int>> GetClienteKeysAsync(IEnumerable<string> idsOrigen, CancellationToken cancellationToken = default)

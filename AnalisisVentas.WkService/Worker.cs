@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
@@ -7,16 +8,16 @@ namespace AnalisisVentas.WkService;
 
 public class Worker : BackgroundService
 {
-    private readonly VentasHandlerService _ventasHandler;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
 
     public Worker(
-        VentasHandlerService ventasHandler,
+        IServiceScopeFactory scopeFactory,
         ILogger<Worker> logger,
         IConfiguration configuration)
     {
-        _ventasHandler = ventasHandler;
+        _scopeFactory = scopeFactory;
         _logger = logger;
         _configuration = configuration;
     }
@@ -30,7 +31,10 @@ public class Worker : BackgroundService
 
             _logger.LogInformation("Worker iniciado. Procesando archivo: {Path}", csvPath);
 
-            await _ventasHandler.ExecuteAsync(csvPath, stoppingToken);
+            using var scope = _scopeFactory.CreateScope();
+            var ventasHandler = scope.ServiceProvider.GetRequiredService<VentasHandlerService>();
+            
+            await ventasHandler.ExecuteAsync(csvPath, stoppingToken);
 
             _logger.LogInformation("Proceso ETL finalizado correctamente.");
         }
