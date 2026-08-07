@@ -1,0 +1,12 @@
+ProductoId,Nombre,Categoria,Precio,Stock
+1,Laptop HP Pavilion,Tecnologia,650.00,25
+2,Mouse Inalambrico Logitech,Tecnologia,15.50,100
+3,Teclado Mecanico RGB,Tecnologia,45.99,60
+4,Monitor Samsung 24 pulgadas,Tecnologia,180.00,30
+5,Silla Ergonomica Oficina,Mobiliario,220.00,15
+6,Escritorio de Madera,Mobiliario,150.00,10
+7,Impresora Epson L3250,Tecnologia,190.00,20
+8,Camara Web Full HD,Tecnologia,35.00,40
+9,Auriculares Bluetooth,Tecnologia,28.75,80
+10,Lampara de Escritorio LED,Mobiliario,22.00,50
+11,Pizarra Blanca,Mobiliario,60.00,12
