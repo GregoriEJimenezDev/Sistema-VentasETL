@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/Data/">
-    <Project Path="AnalisisVentas.Data/AnalisisVentas.Data.csproj" />
-  </Folder>
-  <Folder Name="/Proccess/">
-    <Project Path="AnalisisVentas.WkService/AnalisisVentas.WkService.csproj" />
-  </Folder>
-</Solution>
