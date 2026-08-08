@@ -1,107 +1,122 @@
-﻿using System.Globalization;
-using Microsoft.Extensions.Logging;
+using System.Globalization;
+using ETLVentas.DW.domain.Entities.Api;
+using ETLVentas.DW.domain.Entities.Csv;
+using ETLVentas.DW.domain.Entities.Db;
 using ETLVentas.DW.domain.Entities.Dimensions;
 using ETLVentas.DW.domain.Entities.Facts;
 using ETLVentas.DW.domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace ETLVentas.DW.application.Services;
 
 public class VentasHandlerService
 {
-    private readonly ICsvVentasFileReaderRepository _csvReader;
+    private readonly IStagingService _staging;
     private readonly ISalesDwhRepository _dwhRepository;
     private readonly ILogger<VentasHandlerService> _logger;
 
     public VentasHandlerService(
-        ICsvVentasFileReaderRepository csvReader,
+        IStagingService staging,
         ISalesDwhRepository dwhRepository,
         ILogger<VentasHandlerService> logger)
     {
-        _csvReader = csvReader;
+        _staging = staging;
         _dwhRepository = dwhRepository;
         _logger = logger;
     }
 
-    public async Task ExecuteAsync(string csvFilePath, CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("=== INICIANDO PROCESO ETL ===");
-        _logger.LogInformation("Archivo origen: {FilePath}", csvFilePath);
+        _logger.LogInformation("=== INICIANDO FASE 2: CARGA AL DWH DESDE STAGING ===");
 
-        // 1. Leer CSV
-        _logger.LogInformation("Paso 1: Leyendo archivo CSV...");
-        var rows = await _csvReader.ReadAsync(csvFilePath, cancellationToken);
-        var rowsList = rows.ToList();
-        _logger.LogInformation("Paso 1 completado. Registros leídos: {Count}", rowsList.Count);
+        // 1. Leer los 9 conjuntos de staging generados por la Fase 1 (Extracción).
+        //    La Fase 2 consume EXCLUSIVAMENTE los archivos que escribió la Fase 1.
+        _logger.LogInformation("Paso 1: Leyendo staging de la Fase 1...");
+        var productosBd = (await _staging.ReadAsync<Product>("productos-bd", cancellationToken)).ToList();
+        var categoriasBd = (await _staging.ReadAsync<Category>("categorias-bd", cancellationToken)).ToList();
+        var clientesBd = (await _staging.ReadAsync<Customer>("clientes-bd", cancellationToken)).ToList();
+        var ciudadesBd = (await _staging.ReadAsync<City>("ciudades-bd", cancellationToken)).ToList();
+        var ordenesBd = (await _staging.ReadAsync<Order>("ordenes-bd", cancellationToken)).ToList();
+        var detallesBd = (await _staging.ReadAsync<OrderDetail>("detalles-bd", cancellationToken)).ToList();
+        var suplidoresApi = (await _staging.ReadAsync<Supplier>("suplidores-api", cancellationToken)).ToList();
+        var productosCsv = (await _staging.ReadAsync<ProductoCsv>("productos-csv", cancellationToken)).ToList();
+        var clientesCsv = (await _staging.ReadAsync<ClienteCsv>("clientes-csv", cancellationToken)).ToList();
 
-        if (rowsList.Count == 0)
+        _logger.LogInformation("Staging leído -> Productos BD: {ProductosBD} | Categorías: {Categorias} | Clientes BD: {ClientesBD} | Ciudades: {Ciudades} | Órdenes: {Ordenes} | Detalles: {Detalles} | Suplidores API: {Suplidores} | Productos CSV: {ProductosCSV} | Clientes CSV: {ClientesCSV}",
+            productosBd.Count, categoriasBd.Count, clientesBd.Count, ciudadesBd.Count,
+            ordenesBd.Count, detallesBd.Count, suplidoresApi.Count, productosCsv.Count, clientesCsv.Count);
+
+        if (detallesBd.Count == 0)
         {
-            _logger.LogWarning("No hay datos para procesar. Finalizando.");
+            _logger.LogWarning("No hay detalles de ventas en staging. Finalizando Fase 2 sin cargas.");
             return;
         }
 
-        // 2. Transformar y deduplicar dimensiones con LINQ
+        // 2. Transformar y deduplicar dimensiones a partir de los datos REALES del staging.
+        //    La BD transaccional es la fuente de verdad para el modelo dimensional; los
+        //    staging de CSV (productos-csv/clientes-csv) son el feed plano legacy, se leen
+        //    para trazabilidad pero no alimentan las dimensiones del DWH.
         _logger.LogInformation("Paso 2: Transformando y deduplicando dimensiones...");
 
-        var categorias = rowsList
-            .Select(r => r.Categoria)
-            .Distinct()
-            .Select(n => new DimCategoria
+        var categoriaPorId = categoriasBd.ToDictionary(c => c.CategoryID, c => c.CategoryName);
+        var ciudadPorId = ciudadesBd.ToDictionary(c => c.CityID, c => c.CityName);
+
+        var categorias = categoriasBd
+            .Select(c => new DimCategoria
             {
-                NombreCategoria = n,
+                NombreCategoria = c.CategoryName,
                 FechaCreacionDW = DateTime.UtcNow
             })
             .ToList();
         _logger.LogInformation("  - Categorías únicas: {Count}", categorias.Count);
 
-        var productos = rowsList
-            .GroupBy(r => r.Producto)
-            .Select(g => g.First())
-            .Select(r => new DimProducto
+        var productos = productosBd
+            .Select(p => new DimProducto
             {
-                Codigo = r.Producto, // Usamos el nombre como código ya que no hay código separado
-                NombreProducto = r.Producto,
-                Categoria = r.Categoria,
-                Precio = r.PrecioBase,
-                Stock = 0, // No disponible en CSV
+                Codigo = p.ProductID.ToString(),
+                NombreProducto = p.ProductName,
+                Categoria = categoriaPorId.TryGetValue(p.CategoryID, out var categoria) ? categoria : string.Empty,
+                Precio = p.Price,
+                Stock = p.Stock,
                 FechaCreacionDW = DateTime.UtcNow
             })
             .ToList();
         _logger.LogInformation("  - Productos únicos: {Count}", productos.Count);
 
-        var clientes = rowsList
-            .GroupBy(r => r.Cliente)
-            .Select(g => g.First())
-            .Select(r => new DimCliente
+        var clientes = clientesBd
+            .Select(c => new DimCliente
             {
-                ClienteIdOrigen = r.Cliente,
-                NombreCompleto = r.Cliente,
-                Email = string.Empty,
-                Telefono = string.Empty,
-                Ciudad = string.Empty,
+                ClienteIdOrigen = c.CustomerID.ToString(),
+                NombreCompleto = $"{c.FirstName} {c.LastName}".Trim(),
+                Email = c.Email,
+                Telefono = c.Phone,
+                Ciudad = ciudadPorId.TryGetValue(c.CityID, out var ciudad) ? ciudad : string.Empty,
                 FechaCreacionDW = DateTime.UtcNow
             })
             .ToList();
         _logger.LogInformation("  - Clientes únicos: {Count}", clientes.Count);
 
-        var suplidores = rowsList
-            .GroupBy(r => r.Suplidor)
-            .Select(g => g.First())
-            .Select(r => new DimSuplidor
+        // Suplidores: provienen de la API. Si la API no estaba corriendo en la Fase 1,
+        // la lista queda vacía y DimSuplidor no se puebla (el proceso no debe fallar).
+        var suplidores = suplidoresApi
+            .Select(s => new DimSuplidor
             {
-                SuplidorIdOrigen = r.Suplidor,
-                NombreSuplidor = r.Suplidor,
-                Email = string.Empty,
-                Telefono = string.Empty,
-                Ciudad = string.Empty,
+                SuplidorIdOrigen = s.Id.ToString(),
+                NombreSuplidor = $"{s.Name.Firstname} {s.Name.Lastname}".Trim(),
+                Email = s.Email,
+                Telefono = s.Phone,
+                Ciudad = s.Address.City,
                 FechaCreacionDW = DateTime.UtcNow
             })
             .ToList();
         _logger.LogInformation("  - Suplidores únicos: {Count}", suplidores.Count);
+        if (suplidores.Count == 0)
+            _logger.LogWarning("DimSuplidor quedará vacío: la API no devolvió suplidores en esta ejecución.");
 
-        // 3. Fechas únicas (yyyyMMdd)
+        // 3. Fechas únicas (yyyyMMdd) a partir de las fechas de las órdenes reales.
         _logger.LogInformation("Paso 3: Generando dimensión de tiempo...");
-        var fechas = rowsList
-            .Select(r => r.Fecha.Date)
+        var fechas = ordenesBd
+            .Select(o => o.OrderDate.Date)
             .Distinct()
             .Select(fecha => new DimFecha
             {
@@ -120,32 +135,39 @@ public class VentasHandlerService
             .ToList();
         _logger.LogInformation("  - Fechas únicas: {Count}", fechas.Count);
 
-        // 4. Cargar dimensiones primero
+        // 4. Cargar dimensiones primero.
         _logger.LogInformation("Paso 4: Cargando dimensiones en DWH...");
         await _dwhRepository.LoadDataAsync(
             categorias, productos, clientes, suplidores, fechas, Enumerable.Empty<FactVentas>(),
             cancellationToken);
         _logger.LogInformation("Paso 4 completado. Dimensiones guardadas.");
 
-        // 5. Resolver FKs y crear hechos
+        // 5. Resolver FKs y construir hechos desde los detalles de orden REALES.
+        //    Relación: OrderDetail.OrderID -> Order (CustomerID + OrderDate); OrderDetail.ProductID -> Producto.
         _logger.LogInformation("Paso 5: Resolviendo claves foráneas y construyendo hechos...");
         var productoKeys = await _dwhRepository.GetProductoKeysAsync(productos.Select(p => p.Codigo), cancellationToken);
         var clienteKeys = await _dwhRepository.GetClienteKeysAsync(clientes.Select(c => c.ClienteIdOrigen), cancellationToken);
-        var categoriaKeys = await _dwhRepository.GetCategoriaKeysAsync(categorias.Select(c => c.NombreCategoria), cancellationToken);
-        var suplidorKeys = await _dwhRepository.GetSuplidorKeysAsync(suplidores.Select(s => s.SuplidorIdOrigen), cancellationToken);
 
-        var hechos = rowsList.Select(r => new FactVentas
-        {
-            ProductoKey = productoKeys[r.Producto],
-            ClienteKey = clienteKeys[r.Cliente],
-            FechaKey = int.Parse(r.Fecha.ToString("yyyyMMdd")),
-            Cantidad = r.Cantidad,
-            PrecioUnitario = r.PrecioBase,
-            TotalVenta = r.Total
-        }).ToList();
+        var ordenPorId = ordenesBd.ToDictionary(o => o.OrderID, o => o);
+        var hechos = detallesBd
+            .Where(d => ordenPorId.ContainsKey(d.OrderID))
+            .Select(d =>
+            {
+                var orden = ordenPorId[d.OrderID];
+                return new FactVentas
+                {
+                    ProductoKey = productoKeys[d.ProductID.ToString()],
+                    ClienteKey = clienteKeys[orden.CustomerID.ToString()],
+                    FechaKey = int.Parse(orden.OrderDate.ToString("yyyyMMdd")),
+                    Cantidad = d.Quantity,
+                    PrecioUnitario = d.UnitPrice,
+                    TotalVenta = d.TotalPrice
+                };
+            })
+            .ToList();
         _logger.LogInformation("  - Hechos construidos: {Count}", hechos.Count);
 
-        // 6. Guardar hechos
+        // 6. Guardar hechos.
         _logger.LogInformation("Paso 6: Guardando hechos en DWH...");
         await _dwhRepository.LoadDataAsync(
             Enumerable.Empty<DimCategoria>(),
@@ -156,7 +178,7 @@ public class VentasHandlerService
             hechos,
             cancellationToken);
 
-        _logger.LogInformation("=== PROCESO ETL COMPLETADO EXITOSAMENTE ===");
+        _logger.LogInformation("=== FASE 2 COMPLETADA EXITOSAMENTE ===");
         _logger.LogInformation("Resumen: {Categorias} categorías, {Productos} productos, {Clientes} clientes, {Suplidores} suplidores, {Fechas} fechas, {Hechos} hechos",
             categorias.Count, productos.Count, clientes.Count, suplidores.Count, fechas.Count, hechos.Count);
     }

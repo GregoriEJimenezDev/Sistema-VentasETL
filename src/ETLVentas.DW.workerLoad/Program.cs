@@ -63,6 +63,10 @@ builder.Services.AddTransient<IExtractor<OrderDetail>, DatabaseExtractor<OrderDe
 builder.Services.AddTransient<EtlOrchestratorService>();
 
 // Carga al DWH
+// Nota de diseño: la Carga usa EF Core porque simplifica el manejo de relaciones y claves
+// foráneas del modelo dimensional (UPSERT por clave natural, anti-duplicados de hechos),
+// mientras que la Extracción usa ADO.NET para tener control directo sobre lecturas simples
+// de fuentes heterogéneas (BD transaccional, API y CSV).
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
@@ -78,7 +82,6 @@ builder.Services.AddDbContextPool<VentasDwhContext>(options =>
     });
 }, poolSize: 32);
 
-builder.Services.AddTransient<ICsvVentasFileReaderRepository, VentasCsvFileReaderRepository>();
 builder.Services.AddTransient<ISalesDwhRepository, SalesDwhRepository>();
 builder.Services.AddScoped<VentasHandlerService>();
 

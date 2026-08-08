@@ -1,5 +1,4 @@
 using ETLVentas.DW.application.Services;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -9,16 +8,13 @@ public class Worker : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<Worker> _logger;
-    private readonly IConfiguration _configuration;
 
     public Worker(
         IServiceScopeFactory scopeFactory,
-        ILogger<Worker> logger,
-        IConfiguration configuration)
+        ILogger<Worker> logger)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
-        _configuration = configuration;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -35,13 +31,10 @@ public class Worker : BackgroundService
             var etlOrchestrator = provider.GetRequiredService<EtlOrchestratorService>();
             await etlOrchestrator.RunAsync(stoppingToken);
 
-            // Fase 2: Carga de ventas al DWH
-            _logger.LogInformation("Fase 2: Carga de ventas al DWH...");
-            var csvPath = _configuration["CsvSettings:FilePath"]
-                ?? throw new InvalidOperationException("CSV path not configured in 'CsvSettings:FilePath'");
-
+            // Fase 2: Carga de ventas al DWH, alimentada directamente desde el staging de la Fase 1.
+            _logger.LogInformation("Fase 2: Carga de ventas al DWH desde staging...");
             var ventasHandler = provider.GetRequiredService<VentasHandlerService>();
-            await ventasHandler.ExecuteAsync(csvPath, stoppingToken);
+            await ventasHandler.ExecuteAsync(stoppingToken);
 
             _logger.LogInformation("=== ETL COMPLETO FINALIZADO CORRECTAMENTE ===");
         }

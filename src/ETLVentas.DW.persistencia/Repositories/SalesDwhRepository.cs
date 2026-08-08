@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ETLVentas.DW.domain.Entities.Dimensions;
 using ETLVentas.DW.domain.Entities.Facts;
@@ -117,17 +117,25 @@ public class SalesDwhRepository : ISalesDwhRepository
         var nuevasFechas = fechas.Where(f => !existingFechasSet.Contains(f.FechaKey));
         await _context.DimFechas.AddRangeAsync(nuevasFechas, cancellationToken);
 
-        // 6. Hechos - Anti-duplicado por clave compuesta
+        // 6. Hechos - Anti-duplicado por clave compuesta.
+        // Se deduplican contra las filas YA existentes en BD y también contra los
+        // duplicados DENTRO del mismo lote (p. ej. órdenes de prueba repetidas con el
+        // mismo cliente, fecha y productos), para respetar el índice único del DWH.
         _logger.LogInformation("Procesando FactVentas: {Count} registros", hechos.Count());
         var existingHechos = await _context.FactVentas
             .Select(f => new { f.ProductoKey, f.ClienteKey, f.FechaKey })
             .ToListAsync(cancellationToken);
         var existingHechosSet = new HashSet<(int ProductoKey, int ClienteKey, int FechaKey)>(
             existingHechos.Select(h => (h.ProductoKey, h.ClienteKey, h.FechaKey)));
-        
-        var nuevosHechos = hechos.Where(f => !existingHechosSet.Contains(
-            (f.ProductoKey, f.ClienteKey, f.FechaKey)));
-        
+
+        var nuevosHechos = new List<FactVentas>();
+        foreach (var hecho in hechos)
+        {
+            var key = (hecho.ProductoKey, hecho.ClienteKey, hecho.FechaKey);
+            if (existingHechosSet.Add(key))
+                nuevosHechos.Add(hecho);
+        }
+
         await _context.FactVentas.AddRangeAsync(nuevosHechos, cancellationToken);
 
         // Guardar todo en una sola transacción

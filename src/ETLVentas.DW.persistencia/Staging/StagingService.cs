@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using ETLVentas.DW.domain.Interfaces;
 using Microsoft.Extensions.Configuration;
 
@@ -27,5 +27,22 @@ public class StagingService : IStagingService
         await File.WriteAllTextAsync(filePath, json, cancellationToken);
 
         _logger.LogInformation("Staging: {Cantidad} registros de {Nombre} escritos en {Ruta}", records.Count(), name, filePath);
+    }
+
+    public async Task<IEnumerable<T>> ReadAsync<T>(string name, CancellationToken cancellationToken = default)
+    {
+        var filePath = Path.Combine(_directory, $"{name}.json");
+
+        if (!File.Exists(filePath))
+        {
+            _logger.LogWarning("Staging: archivo {Nombre} no encontrado en {Ruta}. Se devuelve lista vacía.", name, filePath);
+            return Array.Empty<T>();
+        }
+
+        await using var stream = File.OpenRead(filePath);
+        var records = await JsonSerializer.DeserializeAsync<List<T>>(stream, cancellationToken: cancellationToken);
+
+        _logger.LogInformation("Staging: {Cantidad} registros de {Nombre} leídos desde {Ruta}", records?.Count ?? 0, name, filePath);
+        return records ?? new List<T>();
     }
 }
